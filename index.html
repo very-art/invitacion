@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Leaflet para mapas precisos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
         :root {
             --pastel-purple: #a78bfa;
@@ -132,7 +135,7 @@
 
         .icon { font-size: 1.3rem; margin-right: 15px; filter: drop-shadow(0 0 5px var(--pastel-blue)); }
         .label { font-size: 0.6rem; color: var(--pastel-blue); text-transform: uppercase; letter-spacing: 1.5px; display: block; }
-        .value { font-size: 1rem; color: #eee; font-weight: 500; }
+        .value { font-size: 0.9rem; color: #eee; font-weight: 500; }
 
         #map-container {
             height: 0;
@@ -143,6 +146,16 @@
             border-radius: 8px;
         }
         #map-container.open { height: 180px; margin-bottom: 15px; }
+
+        #leaflet-map {
+            background: #1a1a2e;
+            border-radius: 8px;
+        }
+
+        /* Estilos para popup de Leaflet */
+        .leaflet-popup-content {
+            font-size: 12px !important;
+        }
 
         .btn-zone { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 
@@ -244,7 +257,7 @@
                 <span class="icon">📅</span>
                 <div>
                     <span class="label">NOCHE DE ROCK</span>
-                    <span class="value">Viernes, 21 de Febrero</span>
+                    <span class="value">Sábado, 21 de Febrero</span>
                 </div>
             </div>
             
@@ -260,16 +273,20 @@
                 <span class="icon">📍</span>
                 <div class="flex-1">
                     <span class="label">UBICACIÓN (TOCA PARA MAPA)</span>
-                    <span class="value flex justify-between items-center">Centro, Quito - EC <span id="map-arrow" style="font-size: 0.7rem; margin-left: 10px;">▼</span></span>
+                    <span class="value flex justify-between items-center text-xs sm:text-base">
+                        Vuelta al Ruedo, Giacomo Roca N33 29
+                        <span id="map-arrow" style="font-size: 0.7rem; margin-left: 10px;">▼</span>
+                    </span>
                 </div>
             </div>
             
             <div id="map-container">
-                <iframe 
-                    width="100%" height="100%" style="border:0" loading="lazy" 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.790184400!2d-78.5100!3d-0.2200!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d5999f8d0a0b2d%3A0x7c7f7f7f7f7f7f7f!2sQuito%2C%20Ecuador!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec">
-                </iframe>
+                <div id="leaflet-map" style="width: 100%; height: 100%;"></div>
             </div>
+
+            <button class="btn-action" style="background: rgba(96, 165, 250, 0.15); color: var(--pastel-blue); border: 1px solid var(--pastel-blue); padding: 12px; margin-top: 10px; margin-bottom: 15px; font-size: 0.75rem;" onclick="window.open('https://maps.app.goo.gl/HHc61jH3sriGGMbeA', '_blank')">
+                🗺️ ABRIR EN GOOGLE MAPS
+            </button>
 
             <div class="data-row">
                 <span class="icon">🎸</span>
@@ -297,7 +314,7 @@
         }
         setInterval(rotateBackground, 10000);
 
-        // Lógica del Loader
+        // Lógica del Loader mejorada para asegurar ejecución
         let progress = 0;
         const bar = document.getElementById('bar-inner');
         const pct = document.getElementById('pct');
@@ -305,7 +322,7 @@
 
         function doBoot() {
             if (progress < 100) {
-                progress += Math.random() * 8; // Velocidad de carga
+                progress += Math.random() * 8; 
                 if (progress > 100) progress = 100;
                 
                 bar.style.width = progress + "%";
@@ -315,7 +332,7 @@
                 if (progress > 60) log.innerText = "> ENFRIANDO LAS BEBIDAS...";
                 if (progress > 90) log.innerText = "> TODO LISTO...";
                 
-                requestAnimationFrame(() => setTimeout(doBoot, 50));
+                setTimeout(doBoot, 50);
             } else {
                 setTimeout(() => {
                     document.getElementById('loader').style.opacity = '0';
@@ -335,17 +352,19 @@
             arrow.innerText = map.classList.contains('open') ? "▲" : "▼";
         }
 
-        const poolGeneral = [
-            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGpwcDhvamh0cDZwNGFzanp3enRnZnJscGg4YnUyb3UxNTFibjVicSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Od0QRnzwRBYmDU3eEO/giphy.gif",
-            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGpwcDhvamh0cDZwNGFzanp3enRnZnJscGg4YnUyb3UxNTFibjVicSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/cXblnKXr2BQOaYnTni/giphy.gif",
-            "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Z2hkcXY3cm15MWdxa2VndWpuNGtvcmswMGNiY2Nxam4xeXZoeGtmdyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/11YMhfLfGoq5Gg/giphy.gif",
-            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMmkzd2U4NG0wMWo0bnY2bm1uZWNtY2xsa2NocnZkMTB0azFqdGlxMSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/tIeCLkB8geYtW/giphy.gif",
-            "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzMzbXFia3FlOWh3ZzMybGY1YTF5YmhscWR1bm96dzAxcjkwcDh2MiZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/RIhNQOjGa39Ze/giphy.gif"
+        // Pool de GIFs con lógica de probabilidad (60% para el favorito)
+        const favoriteGif = "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Z2hkcXY3cm15MWdxa2VndWpuNGtvcmswMGNiY2Nxam4xeXZoeGtmdyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/11YMhfLfGoq5Gg/giphy.gif";
+        const otherGifs = [
+            "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzMzbXFia3FlOWh3ZzMybGY1YTF5YmhscWR1bm96dzAxcjkwcDh2MiZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/RIhNQOjGa39Ze/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGpwcDhvamh0cDZwNGFzanp3enRnZnJscGg4YnUyb3UxNTFibjVicSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/cXblnKXr2BQOaYnTni/giphy.gif"
         ];
 
-        function spawnGif(url) {
+        function spawnGif() {
+            const roll = Math.random(); 
+            let selectedUrl = roll < 0.6 ? favoriteGif : otherGifs[Math.floor(Math.random() * otherGifs.length)];
+
             const img = document.createElement('img');
-            img.src = url;
+            img.src = selectedUrl;
             img.className = 'reaction-gif';
             const x = Math.max(10, Math.random() * (window.innerWidth - 210));
             const y = Math.max(10, Math.random() * (window.innerHeight - 210));
@@ -361,11 +380,9 @@
         function triggerFeedback(type) {
             const toast = document.getElementById('feedback-toast');
             const sub = document.getElementById('toast-subtext');
-            for(let i=0; i<3; i++) {
-                setTimeout(() => {
-                    spawnGif(poolGeneral[Math.floor(Math.random() * poolGeneral.length)]);
-                }, i * 300);
-            }
+            
+            spawnGif();
+
             sub.innerText = type === 'confirm' ? "¡NOS VEMOS EN EL BAR!" : "¡LE VA A ENCANTAR!";
             confetti({ 
                 particleCount: 150, spread: 70, origin: { y: 0.7 },
@@ -375,8 +392,49 @@
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        // Iniciar al cargar todo el contenido
-        window.addEventListener('load', doBoot);
+        // Ejecutar al cargar la ventana
+        window.onload = doBoot;
+
+        // Inicializar mapa Leaflet cuando se abre
+        let mapInstance = null;
+
+        function initLeafletMap() {
+            if (mapInstance) return; // Ya está inicializado
+
+            // Coordenadas exactas de Vuelta al Ruedo, Quito
+            const latitude = -0.211993;
+            const longitude = -78.486255;
+            
+            mapInstance = L.map('leaflet-map').setView([latitude, longitude], 18);
+            
+            // Usar OpenStreetMap como proveedor de tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 19
+            }).addTo(mapInstance);
+            
+            // Agregar marcador en la ubicación exacta
+            L.marker([latitude, longitude]).addTo(mapInstance)
+                .bindPopup('<div style="text-align: center; font-weight: bold; color: #a78bfa;">📍 Vuelta al Ruedo<br/>Giacomo Roca N33 29<br/>Quito</div>')
+                .openPopup();
+            
+            // Forzar redibujado cuando el mapa se expande
+            setTimeout(() => {
+                mapInstance.invalidateSize();
+            }, 410);
+        }
+
+        // Modificar toggleMap para inicializar Leaflet
+        const originalToggleMap = toggleMap;
+        toggleMap = function() {
+            originalToggleMap();
+            const map = document.getElementById('map-container');
+            if (map.classList.contains('open')) {
+                setTimeout(() => {
+                    initLeafletMap();
+                }, 50);
+            }
+        };
     </script>
 </body>
 </html>
