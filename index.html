@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Leaflet para mapas precisos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
@@ -27,7 +26,6 @@
             touch-action: manipulation;
         }
 
-        /* --- Fondo de GIFs con Transiciones --- */
         .bg-slideshow {
             position: fixed; inset: 0;
             z-index: 1;
@@ -53,7 +51,6 @@
             z-index: 2;
         }
 
-        /* --- Escena Principal --- */
         #main-stage {
             display: none;
             height: 100dvh; width: 100vw;
@@ -152,11 +149,6 @@
             border-radius: 8px;
         }
 
-        /* Estilos para popup de Leaflet */
-        .leaflet-popup-content {
-            font-size: 12px !important;
-        }
-
         .btn-zone { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 
         .btn-action {
@@ -165,6 +157,7 @@
             transition: transform 0.2s, filter 0.2s; border: none;
             border-radius: 8px;
             width: 100%;
+            position: relative;
         }
 
         .btn-confirm { 
@@ -175,11 +168,11 @@
         .btn-gift { background: transparent; color: var(--pastel-blue); border: 1px solid var(--pastel-blue); }
 
         .btn-action:active { transform: scale(0.96); }
+        .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* --- Pop-up de GIFs --- */
         .reaction-gif {
             position: absolute; 
-            width: 200px; 
+            width: 180px; 
             z-index: 100;
             pointer-events: none; 
             border: 3px solid var(--pastel-purple);
@@ -203,7 +196,6 @@
         }
         #feedback-toast.show { bottom: 20px; }
 
-        /* --- Estilos del Loader --- */
         #loader {
             position: fixed; inset: 0; background: var(--deep-bg);
             z-index: 500; display: flex; flex-direction: column;
@@ -224,9 +216,9 @@
     </div>
 
     <div id="feedback-toast">
-        <span style="font-size: 1.8rem;">🍸</span>
+        <span id="toast-icon" style="font-size: 1.8rem;">🍸</span>
         <div>
-            <div style="font-weight: 900; font-size: 0.95rem; letter-spacing: 0.5px;">¡CONFIRMADO!</div>
+            <div id="toast-title" style="font-weight: 900; font-size: 0.95rem; letter-spacing: 0.5px;">¡CONFIRMADO!</div>
             <div id="toast-subtext" style="font-size: 0.75rem; text-transform: uppercase; opacity: 0.8;"></div>
         </div>
     </div>
@@ -297,13 +289,20 @@
             </div>
 
             <div class="btn-zone">
-                <button class="btn-action btn-confirm" onclick="triggerFeedback('confirm')">💜 ¡ESTARÉ AHÍ!</button>
-                <button class="btn-action btn-gift" onclick="triggerFeedback('gift')">🎁 LLEVARÉ UN DETALLE</button>
+                <button id="btn-confirm" class="btn-action btn-confirm" onclick="handleResponse('Asistiré')">💜 ¡ESTARÉ AHÍ!</button>
+                <button id="btn-gift" class="btn-action btn-gift" onclick="handleResponse('Llevaré regalo')">🎁 LLEVARÉ UN DETALLE</button>
             </div>
         </div>
     </div>
 
+    <!-- Iframe invisible para procesar el envío sin recargar -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
     <script>
+        // CONFIGURACIÓN ACTUALIZADA CON TUS DATOS
+        const FORM_ID = "1FAIpQLScO4uVv4N6mw6QBScZ4dUta2ui1RDhJRKn0efdliCA16CdgpA"; 
+        const ENTRY_ID = "entry.518177949"; 
+
         // Slideshow de fondo
         const bgGifs = document.querySelectorAll('.bg-gif');
         let currentBg = 0;
@@ -314,7 +313,7 @@
         }
         setInterval(rotateBackground, 10000);
 
-        // Lógica del Loader mejorada para asegurar ejecución
+        // Loader
         let progress = 0;
         const bar = document.getElementById('bar-inner');
         const pct = document.getElementById('pct');
@@ -324,19 +323,15 @@
             if (progress < 100) {
                 progress += Math.random() * 8; 
                 if (progress > 100) progress = 100;
-                
                 bar.style.width = progress + "%";
                 pct.innerText = Math.floor(progress) + "%";
-                
                 if (progress > 30) log.innerText = "> CALIBRANDO NEONES...";
                 if (progress > 60) log.innerText = "> ENFRIANDO LAS BEBIDAS...";
                 if (progress > 90) log.innerText = "> TODO LISTO...";
-                
                 setTimeout(doBoot, 50);
             } else {
                 setTimeout(() => {
                     document.getElementById('loader').style.opacity = '0';
-                    document.getElementById('loader').style.transition = 'opacity 0.5s ease';
                     setTimeout(() => {
                         document.getElementById('loader').style.display = 'none';
                         document.getElementById('main-stage').style.display = 'flex';
@@ -350,9 +345,9 @@
             const arrow = document.getElementById('map-arrow');
             map.classList.toggle('open');
             arrow.innerText = map.classList.contains('open') ? "▲" : "▼";
+            if (map.classList.contains('open')) setTimeout(initLeafletMap, 100);
         }
 
-        // Pool de GIFs con lógica de probabilidad (60% para el favorito)
         const favoriteGif = "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Z2hkcXY3cm15MWdxa2VndWpuNGtvcmswMGNiY2Nxam4xeXZoeGtmdyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/11YMhfLfGoq5Gg/giphy.gif";
         const otherGifs = [
             "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dzMzbXFia3FlOWh3ZzMybGY1YTF5YmhscWR1bm96dzAxcjkwcDh2MiZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/RIhNQOjGa39Ze/giphy.gif",
@@ -362,12 +357,11 @@
         function spawnGif() {
             const roll = Math.random(); 
             let selectedUrl = roll < 0.6 ? favoriteGif : otherGifs[Math.floor(Math.random() * otherGifs.length)];
-
             const img = document.createElement('img');
             img.src = selectedUrl;
             img.className = 'reaction-gif';
-            const x = Math.max(10, Math.random() * (window.innerWidth - 210));
-            const y = Math.max(10, Math.random() * (window.innerHeight - 210));
+            const x = Math.max(10, Math.random() * (window.innerWidth - 190));
+            const y = Math.max(10, Math.random() * (window.innerHeight - 190));
             img.style.left = x + 'px';
             img.style.top = y + 'px';
             document.body.appendChild(img);
@@ -377,64 +371,56 @@
             }, 3000);
         }
 
-        function triggerFeedback(type) {
-            const toast = document.getElementById('feedback-toast');
-            const sub = document.getElementById('toast-subtext');
-            
+        function handleResponse(responseType) {
             spawnGif();
-
-            sub.innerText = type === 'confirm' ? "¡NOS VEMOS EN EL BAR!" : "¡LE VA A ENCANTAR!";
             confetti({ 
                 particleCount: 150, spread: 70, origin: { y: 0.7 },
                 colors: ['#a78bfa', '#60a5fa', '#ffffff']
             });
+
+            const toast = document.getElementById('feedback-toast');
+            const sub = document.getElementById('toast-subtext');
             toast.classList.add('show');
+            sub.innerText = responseType === 'Asistiré' ? "¡NOS VEMOS EN EL BAR!" : "¡LE VA A ENCANTAR EL DETALLE!";
             setTimeout(() => toast.classList.remove('show'), 3500);
+
+            // ENVÍO AL FORMULARIO
+            const formUrl = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+            const f = document.createElement('form');
+            f.action = formUrl;
+            f.method = 'POST';
+            f.target = 'hidden_iframe';
+            
+            const inp = document.createElement('input');
+            inp.name = ENTRY_ID;
+            inp.value = responseType;
+            f.appendChild(inp);
+            
+            document.body.appendChild(f);
+            f.submit();
+            f.remove();
+
+            // Bloquear botones tras confirmar
+            document.getElementById('btn-confirm').disabled = true;
+            document.getElementById('btn-gift').disabled = true;
+            document.getElementById('btn-confirm').innerText = "✓ REGISTRADO";
+            document.getElementById('btn-gift').style.display = "none";
         }
 
-        // Ejecutar al cargar la ventana
         window.onload = doBoot;
 
-        // Inicializar mapa Leaflet cuando se abre
         let mapInstance = null;
-
         function initLeafletMap() {
-            if (mapInstance) return; // Ya está inicializado
-
-            // Coordenadas exactas de Vuelta al Ruedo, Quito
+            if (mapInstance) return;
             const latitude = -0.211993;
             const longitude = -78.486255;
-            
             mapInstance = L.map('leaflet-map').setView([latitude, longitude], 18);
-            
-            // Usar OpenStreetMap como proveedor de tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
+                attribution: '© OpenStreetMap'
             }).addTo(mapInstance);
-            
-            // Agregar marcador en la ubicación exacta
             L.marker([latitude, longitude]).addTo(mapInstance)
-                .bindPopup('<div style="text-align: center; font-weight: bold; color: #a78bfa;">📍 Vuelta al Ruedo<br/>Giacomo Roca N33 29<br/>Quito</div>')
-                .openPopup();
-            
-            // Forzar redibujado cuando el mapa se expande
-            setTimeout(() => {
-                mapInstance.invalidateSize();
-            }, 410);
+                .bindPopup('📍 Vuelta al Ruedo').openPopup();
         }
-
-        // Modificar toggleMap para inicializar Leaflet
-        const originalToggleMap = toggleMap;
-        toggleMap = function() {
-            originalToggleMap();
-            const map = document.getElementById('map-container');
-            if (map.classList.contains('open')) {
-                setTimeout(() => {
-                    initLeafletMap();
-                }, 50);
-            }
-        };
     </script>
 </body>
 </html>
