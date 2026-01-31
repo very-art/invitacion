@@ -7,8 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=VT323&family=Oswald:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <style>
         :root {
             --pastel-purple: #a78bfa;
@@ -112,7 +110,7 @@
         .value { font-size: 0.9rem; color: #eee; }
 
         #map-container { height: 0; overflow: hidden; transition: height 0.4s ease; margin-top: 5px; }
-        #map-container.open { height: 180px; margin-bottom: 15px; border: 1px solid var(--pastel-purple); border-radius: 8px; }
+        #map-container.open { height: auto; min-height: 250px; margin-bottom: 15px; border: 1px solid var(--pastel-purple); border-radius: 8px; }
 
         #name-gate {
             display: none;
@@ -145,6 +143,20 @@
 
         .btn-confirm { background: linear-gradient(90deg, var(--pastel-purple), var(--pastel-blue)); color: #000; }
         .btn-send { background: #fff; color: #000; }
+        
+        .btn-maps {
+            background: #4285F4;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
 
         #loader {
             position: fixed; inset: 0; background: var(--deep-bg);
@@ -159,6 +171,8 @@
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        iframe { width: 100%; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -190,10 +204,15 @@
         <div class="invite-card">
             <div class="data-row">📅 <div><span class="label">FECHA</span><br><span class="value">Sábado, 21 de Febrero</span></div></div>
             <div class="data-row">🕒 <div><span class="label">HORA</span><br><span class="value">08:00 PM</span></div></div>
-            <div class="data-row" onclick="toggleMap()" style="cursor:pointer">📍 <div><span class="label">LUGAR (TOCA AQUÍ)</span><br><span class="value">Vuelta al Ruedo, Giacomo Roca N33 29</span></div></div>
+            <div class="data-row" onclick="toggleMap()" style="cursor:pointer">📍 <div><span class="label">LUGAR (TOCA PARA MAPA)</span><br><span class="value">Vuelta al Ruedo, Isabel La Católica</span></div></div>
             
             <div id="map-container">
-                <div id="leaflet-map" style="width: 100%; height: 100%;"></div>
+                <!-- Iframe oficial solicitado -->
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d613.6650711709374!2d-78.47909291956795!3d-0.18715879296502574!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d59bd38d06f091%3A0xada6c4f8051f63de!2sVuelta%20al%20Ruedo!5e1!3m2!1ses-419!2sec!4v1769890063091!5m2!1ses-419!2sec" height="250" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <a href="https://maps.app.goo.gl/3MrUyGd913WifkX96" target="_blank" class="btn-maps">
+                    <svg style="width:16px;height:16px" viewBox="0 0 24 24"><path fill="currentColor" d="M12,2C15.31,2 18,4.66 18,7.95C18,12.41 12,19 12,19C12,19 6,12.41 6,7.95C6,4.66 8.69,2 12,2M12,6A2,2 0 0,0 10,8A2,2 0 0,0 12,10A2,2 0 0,0 14,8A2,2 0 0,0 12,6M20,19V21H4V19H20Z" /></svg>
+                    ABRIR EN GOOGLE MAPS APP
+                </a>
             </div>
 
             <div class="data-row">🎸 <div><span class="label">DRESS CODE</span><br><span class="value">De preferencia 80's Style</span></div></div>
@@ -201,7 +220,6 @@
             <!-- Botones iniciales -->
             <div id="action-buttons" class="flex flex-col gap-3 mt-5">
                 <button class="btn-action btn-confirm" onclick="askName('Asistiré')">💜 ¡ESTARÉ AHÍ!</button>
-                <button class="btn-action border border-blue-400 text-blue-400" onclick="askName('Llevaré regalo')">🎁 LLEVARÉ UN DETALLE</button>
             </div>
 
             <!-- Entrada de nombre -->
@@ -262,12 +280,10 @@
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.8 } });
             spawnGif();
 
-            // Envío vía Form (Método robusto para GitHub)
             const formUrl = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
             const formData = new FormData();
             formData.append(ENTRY_ID, fullResponse);
 
-            // Fetch con modo no-cors suele funcionar mejor en GitHub para Google Forms
             fetch(formUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -276,7 +292,6 @@
                 console.log("Enviado");
             }).catch(e => console.error(e));
 
-            // UI feedback
             document.getElementById('name-gate').style.display = 'none';
             document.getElementById('success-msg').classList.remove('hidden');
         }
@@ -284,16 +299,6 @@
         function toggleMap() {
             const container = document.getElementById('map-container');
             container.classList.toggle('open');
-            if(container.classList.contains('open')) {
-                setTimeout(initMap, 200);
-            }
-        }
-
-        function initMap() {
-            const coords = [-0.211993, -78.486255];
-            const map = L.map('leaflet-map').setView(coords, 17);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.marker(coords).addTo(map).bindPopup('<b>Vuelta al Ruedo</b>').openPopup();
         }
 
         function spawnGif() {
@@ -306,7 +311,6 @@
             setTimeout(() => img.remove(), 3000);
         }
 
-        // Rotar fondos
         setInterval(() => {
             const gifs = document.querySelectorAll('.bg-gif');
             let active = 0;
