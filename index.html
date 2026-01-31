@@ -68,6 +68,30 @@
             line-height: 1.1;
         }
 
+        .spotlight-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 25px;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 4px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        #level-text {
+            font-family: 'VT323', monospace;
+            color: var(--pastel-purple);
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            animation: flicker 4s infinite;
+            text-shadow: 0 0 8px var(--pastel-purple);
+        }
+
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; text-shadow: 0 0 10px var(--pastel-purple), 0 0 20px var(--pastel-blue); }
+            20%, 24%, 55% { opacity: 0.15; text-shadow: none; }
+        }
+
         .invite-card {
             width: 100%; max-width: 400px;
             background: rgba(10, 15, 30, 0.95);
@@ -90,7 +114,6 @@
         #map-container { height: 0; overflow: hidden; transition: height 0.4s ease; margin-top: 5px; }
         #map-container.open { height: 180px; margin-bottom: 15px; border: 1px solid var(--pastel-purple); border-radius: 8px; }
 
-        /* Estilos del Formulario de Nombre */
         #name-gate {
             display: none;
             flex-direction: column;
@@ -159,6 +182,9 @@
                 <span class="block text-2xl">¡ESTÁS INVITAD@ AL</span>
                 <span class="block text-4xl mt-1">CUMPLE DE SOLE!</span>
             </h1>
+            <div class="spotlight-wrapper">
+                <div id="level-text">NIVEL 50 DESBLOQUEADO</div>
+            </div>
         </header>
 
         <div class="invite-card">
@@ -169,6 +195,8 @@
             <div id="map-container">
                 <div id="leaflet-map" style="width: 100%; height: 100%;"></div>
             </div>
+
+            <div class="data-row">🎸 <div><span class="label">DRESS CODE</span><br><span class="value">De preferencia 80's Style</span></div></div>
 
             <!-- Botones iniciales -->
             <div id="action-buttons" class="flex flex-col gap-3 mt-5">
