@@ -384,27 +384,34 @@
             sub.innerText = responseType === 'Asistiré' ? "¡NOS VEMOS EN EL BAR!" : "¡LE VA A ENCANTAR EL DETALLE!";
             setTimeout(() => toast.classList.remove('show'), 3500);
 
-            // ENVÍO AL FORMULARIO
-            const formUrl = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
-            const f = document.createElement('form');
-            f.action = formUrl;
-            f.method = 'POST';
-            f.target = 'hidden_iframe';
-            
-            const inp = document.createElement('input');
-            inp.name = ENTRY_ID;
-            inp.value = responseType;
-            f.appendChild(inp);
-            
-            document.body.appendChild(f);
-            f.submit();
-            f.remove();
-
-            // Bloquear botones tras confirmar
+            // Bloquear botones inmediatamente
             document.getElementById('btn-confirm').disabled = true;
             document.getElementById('btn-gift').disabled = true;
             document.getElementById('btn-confirm').innerText = "✓ REGISTRADO";
             document.getElementById('btn-gift').style.display = "none";
+
+            // ENVÍO AL FORMULARIO USANDO POST MANUAL
+            const formUrl = `https://docs.google.com/forms/d/e/${FORM_ID}/formResponse`;
+            const form = document.createElement('form');
+            form.action = formUrl;
+            form.method = 'POST';
+            form.target = 'hidden_iframe';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = ENTRY_ID;
+            input.value = responseType;
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            
+            try {
+                form.submit();
+                // Eliminar el formulario del DOM tras enviarlo
+                setTimeout(() => form.remove(), 1000);
+            } catch (e) {
+                console.error("Error al enviar el formulario:", e);
+            }
         }
 
         window.onload = doBoot;
